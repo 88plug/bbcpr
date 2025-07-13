@@ -31,46 +31,51 @@ fi
 echo -e "${GREEN}🚀 Installing bbcpr - Modern Rust implementation of bbcp${NC}"
 echo ""
 
-# Detect OS and Architecture
+# Detect OS (we use universal binaries now)
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-ARCH=$(uname -m)
 
 case "$OS" in
     linux)
-        case "$ARCH" in
-            x86_64) PLATFORM="x86_64-linux" ;;
-            aarch64) PLATFORM="aarch64-linux" ;;
-            *) echo -e "${RED}Error: Unsupported architecture $ARCH${NC}"; exit 1 ;;
-        esac
+        echo -e "${YELLOW}Detected platform: Linux (universal binary)${NC}"
         ;;
     darwin)
-        case "$ARCH" in
-            x86_64) PLATFORM="x86_64-darwin" ;;
-            arm64) PLATFORM="aarch64-darwin" ;;
-            *) echo -e "${RED}Error: Unsupported architecture $ARCH${NC}"; exit 1 ;;
-        esac
+        echo -e "${YELLOW}Detected platform: macOS (universal binary)${NC}"
         ;;
-    *) echo -e "${RED}Error: Unsupported OS $OS${NC}"; exit 1 ;;
+    *) 
+        echo -e "${RED}Error: Unsupported OS $OS${NC}"
+        echo -e "${YELLOW}bbcpr supports Linux, macOS, and Windows${NC}"
+        exit 1 ;;
 esac
-
-echo -e "${YELLOW}Detected platform: $PLATFORM${NC}"
 
 # Create temporary directory
 TMP_DIR=$(mktemp -d -t bbcpr-install-XXXXXX)
 cd "$TMP_DIR"
 
-# For now, use the pre-built binary from the release directory
-# In production, this would download from GitHub releases
+# Download the universal binary from GitHub releases
 echo -e "${YELLOW}Downloading bbcpr...${NC}"
 
-# Check if we have a local build available
-if [ -f "/home/andrew/bbcp/rust/bbcpr" ]; then
-    echo -e "${GREEN}Using local build${NC}"
-    cp /home/andrew/bbcp/rust/bbcpr "$BINARY_NAME"
+# Determine the correct binary name based on platform
+if [[ "$OS" == "linux" ]] || [[ "$OS" == "darwin" ]]; then
+    BINARY_URL="https://github.com/$REPO/releases/latest/download/bbcpr"
 else
-    # In production, this would be:
-    # wget -q "https://github.com/$REPO/releases/latest/download/bbcpr-$PLATFORM" -O "$BINARY_NAME"
-    echo -e "${RED}Error: Binary not found. Please build first.${NC}"
+    # Windows
+    BINARY_URL="https://github.com/$REPO/releases/latest/download/bbcpr.exe"
+    BINARY_NAME="bbcpr.exe"
+fi
+
+# Download the binary
+if command -v wget >/dev/null 2>&1; then
+    wget -q "$BINARY_URL" -O "$BINARY_NAME"
+elif command -v curl >/dev/null 2>&1; then
+    curl -sL "$BINARY_URL" -o "$BINARY_NAME"
+else
+    echo -e "${RED}Error: Neither wget nor curl is available${NC}"
+    exit 1
+fi
+
+# Check if download was successful
+if [ ! -f "$BINARY_NAME" ] || [ ! -s "$BINARY_NAME" ]; then
+    echo -e "${RED}Error: Failed to download bbcpr binary${NC}"
     exit 1
 fi
 
