@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>bbcpr</id>
+    <version>0.1.0</version>
+    <title>bbcpr</title>
+    <authors>Andrew Mello</authors>
+    <owners>88plug</owners>
+    <licenseUrl>https://github.com/88plug/bbcpr/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/88plug/bbcpr</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/88plug/bbcpr/master/icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Modern Rust implementation of bbcp - high-performance parallel file copy utility</description>
+    <summary>High-performance parallel file transfer utility with SSH support</summary>
+    <releaseNotes>
+## v0.1.0 - Initial Release
+- Multi-stream parallel transfers for maximum speed
+- SSH and TCP connection support
+- Real-time progress reporting
+- Multiple checksum algorithms (MD5, CRC32, Adler32)
+- Cross-platform support (Windows, macOS, Linux)
+- Memory-safe Rust implementation
+    </releaseNotes>
+    <copyright>Copyright 2025 Andrew Mello</copyright>
+    <tags>file-transfer parallel ssh copy bbcp rust cli admin</tags>
+    <projectSourceUrl>https://github.com/88plug/bbcpr</projectSourceUrl>
+    <packageSourceUrl>https://github.com/88plug/bbcpr/tree/master/packaging/chocolatey</packageSourceUrl>
+    <docsUrl>https://github.com/88plug/bbcpr/blob/master/README.md</docsUrl>
+    <bugTrackerUrl>https://github.com/88plug/bbcpr/issues</bugTrackerUrl>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

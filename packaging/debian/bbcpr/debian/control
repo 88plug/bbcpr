@@ -1,0 +1,28 @@
+Source: bbcpr
+Section: utils
+Priority: optional
+Maintainer: Andrew Mello <andrew@88plug.com>
+Build-Depends: debhelper-compat (= 13),
+               cargo,
+               rustc (>= 1.70),
+               libssl-dev,
+               pkg-config
+Standards-Version: 4.6.2
+Homepage: https://github.com/88plug/bbcpr
+Vcs-Browser: https://github.com/88plug/bbcpr
+Vcs-Git: https://github.com/88plug/bbcpr.git
+Rules-Requires-Root: no
+
+Package: bbcpr
+Architecture: amd64 arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Modern parallel file copy utility
+ bbcpr is a modern Rust implementation of bbcp, providing high-performance
+ parallel file transfers with the following features:
+ .
+  * Multi-stream parallel transfers for maximum speed
+  * SSH and TCP connection support
+  * Real-time progress reporting
+  * Multiple checksum algorithms (MD5, CRC32, Adler32)
+  * Cross-platform support
+  * Memory-safe implementation with Rust

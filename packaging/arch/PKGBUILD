@@ -1,0 +1,41 @@
+# Maintainer: Andrew Mello <andrew@88plug.com>
+pkgname=bbcpr
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="A modern Rust implementation of bbcp - high-performance parallel file copy"
+arch=('x86_64' 'aarch64')
+url="https://github.com/88plug/bbcpr"
+license=('GPL3')
+depends=('openssl')
+makedepends=('rust' 'cargo' 'git')
+provides=('bbcpr')
+conflicts=('bbcp')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/88plug/bbcpr/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$srcdir/bbcpr-$pkgver/rust"
+    
+    # Use release profile for optimized binary
+    cargo build --release --locked
+}
+
+check() {
+    cd "$srcdir/bbcpr-$pkgver/rust"
+    
+    # Run tests
+    cargo test --release --locked
+}
+
+package() {
+    cd "$srcdir/bbcpr-$pkgver/rust"
+    
+    # Install binary
+    install -Dm755 "target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
+    
+    # Install license
+    install -Dm644 "../LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    
+    # Install documentation
+    install -Dm644 "../README.md" "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

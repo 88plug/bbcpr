@@ -1,0 +1,195 @@
+name: Package Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            arch: amd64
+          - target: aarch64-unknown-linux-gnu
+            arch: arm64
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        target: ${{ matrix.target }}
+    
+    - name: Install cross-compilation tools
+      if: matrix.arch == 'arm64'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+    
+    - name: Build
+      run: |
+        cd rust
+        if [ "${{ matrix.arch }}" = "arm64" ]; then
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+          export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
+          export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
+        fi
+        cargo build --release --target ${{ matrix.target }}
+    
+    - name: Create tarball
+      run: |
+        cd rust
+        mkdir -p ../release
+        cp target/${{ matrix.target }}/release/bbcpr ../release/
+        cd ../release
+        tar czf bbcpr-${{ github.ref_name }}-${{ matrix.target }}.tar.gz bbcpr
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: bbcpr-linux-${{ matrix.arch }}
+        path: release/*.tar.gz
+
+  build-deb:
+    needs: build-linux
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: bbcpr-linux-amd64
+        path: artifacts/
+    
+    - name: Extract binary
+      run: |
+        cd artifacts
+        tar xzf *.tar.gz
+        cp bbcpr ../packaging/debian/bbcpr/
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y debhelper devscripts
+    
+    - name: Build .deb package
+      run: |
+        cd packaging/debian/bbcpr
+        dpkg-buildpackage -b -us -uc
+        cd ..
+        mv *.deb ../../
+    
+    - name: Upload .deb
+      uses: actions/upload-artifact@v4
+      with:
+        name: bbcpr-deb
+        path: "*.deb"
+
+  build-rpm:
+    needs: build-linux
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install build tools
+      run: |
+        dnf install -y rpm-build rpmdevtools rust cargo openssl-devel
+    
+    - name: Setup RPM build tree
+      run: |
+        rpmdev-setuptree
+        cp packaging/rpm/bbcpr.spec ~/rpmbuild/SPECS/
+    
+    - name: Build RPM
+      run: |
+        cd ~/rpmbuild
+        spectool -g -R SPECS/bbcpr.spec
+        rpmbuild -ba SPECS/bbcpr.spec
+    
+    - name: Upload RPM
+      uses: actions/upload-artifact@v4
+      with:
+        name: bbcpr-rpm
+        path: ~/rpmbuild/RPMS/*/*.rpm
+
+  build-snap:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install snapcraft
+      run: |
+        sudo snap install snapcraft --classic
+    
+    - name: Build snap
+      run: |
+        cd packaging/snap
+        snapcraft
+    
+    - name: Upload snap
+      uses: actions/upload-artifact@v4
+      with:
+        name: bbcpr-snap
+        path: packaging/snap/*.snap
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Build
+      run: |
+        cd rust
+        cargo build --release
+    
+    - name: Create package
+      run: |
+        mkdir release
+        copy rust\target\release\bbcpr.exe release\
+        cd release
+        Compress-Archive -Path bbcpr.exe -DestinationPath bbcpr-${{ github.ref_name }}-windows-x64.zip
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: bbcpr-windows
+        path: release/*.zip
+
+  release:
+    needs: [build-linux, build-deb, build-rpm, build-snap, build-windows]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+    
+    - name: Create release assets
+      run: |
+        mkdir release
+        find artifacts -type f -name "*.tar.gz" -o -name "*.deb" -o -name "*.rpm" -o -name "*.snap" -o -name "*.zip" | xargs -I {} cp {} release/
+    
+    - name: Upload to release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release/*
+        fail_on_unmatched_files: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

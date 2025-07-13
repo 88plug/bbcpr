@@ -1,0 +1,50 @@
+name: bbcpr
+base: core22
+version: '0.1.0'
+summary: Modern Rust implementation of bbcp - high-performance parallel file copy
+description: |
+  bbcpr is a modern rewrite of bbcp in Rust, providing high-performance
+  parallel file transfers with features including:
+  
+  - Multi-stream parallel transfers for maximum speed
+  - SSH and TCP connection support
+  - Real-time progress reporting
+  - Checksum verification (MD5, CRC32, Adler32)
+  - Cross-platform support
+  - Memory-safe implementation
+
+grade: stable
+confinement: classic
+
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+
+apps:
+  bbcpr:
+    command: bin/bbcpr
+    plugs:
+      - network
+      - network-bind
+      - home
+      - removable-media
+      - ssh-keys
+      - ssh-public-keys
+
+parts:
+  bbcpr:
+    plugin: rust
+    source: https://github.com/88plug/bbcpr.git
+    source-tag: v0.1.0
+    source-subdir: rust
+    build-packages:
+      - cargo
+      - rustc
+      - libssl-dev
+      - pkg-config
+    stage-packages:
+      - libssl3
+    override-build: |
+      cd rust
+      cargo build --release
+      install -Dm755 target/release/bbcpr $SNAPCRAFT_PART_INSTALL/bin/bbcpr

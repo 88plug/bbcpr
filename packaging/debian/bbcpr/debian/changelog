@@ -1,0 +1,9 @@
+bbcpr (0.1.0-1) unstable; urgency=medium
+
+  * Initial release
+  * Modern Rust implementation of bbcp
+  * Multi-stream parallel file transfers
+  * SSH and TCP connection support
+  * Cross-platform compatibility
+
+ -- Andrew Mello <andrew@88plug.com>  Sat, 12 Jul 2025 18:00:00 -0700
