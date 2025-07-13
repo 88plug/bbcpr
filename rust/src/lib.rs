@@ -6,6 +6,7 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
+pub mod auth;
 pub mod checksum;
 pub mod error;
 pub mod network;

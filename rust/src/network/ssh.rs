@@ -12,6 +12,7 @@ pub struct SshConnection {
     user: Option<String>,
     port: u16,
     identity_file: Option<String>,
+    password: Option<String>,
     session: Option<Session>,
 }
 
@@ -22,8 +23,14 @@ impl SshConnection {
             user,
             port,
             identity_file,
+            password: None,
             session: None,
         }
+    }
+
+    pub fn with_password(mut self, password: Option<String>) -> Self {
+        self.password = password;
+        self
     }
 }
 
@@ -40,8 +47,38 @@ impl Connection for SshConnection {
         
         builder.port(self.port);
         
+        // Try key-based authentication first if identity file is provided
         if let Some(ref identity) = self.identity_file {
             builder.keyfile(identity);
+        }
+        
+        // If password is provided, configure password authentication
+        if let Some(ref password) = self.password {
+            // For openssh crate, password auth is handled via SSH_ASKPASS
+            // We'll set an environment variable that the SSH client can use
+            std::env::set_var("SSH_ASKPASS_REQUIRE", "force");
+            std::env::set_var("DISPLAY", "none");
+            
+            // Create a temporary script that outputs the password
+            let temp_dir = std::env::temp_dir();
+            let askpass_script = temp_dir.join("bbcpr_askpass.sh");
+            
+            use std::fs::File;
+            use std::io::Write;
+            use std::os::unix::fs::PermissionsExt;
+            
+            let mut file = File::create(&askpass_script)
+                .map_err(|e| BbcprError::Io(e))?;
+            
+            writeln!(file, "#!/bin/bash\necho '{}'", password)
+                .map_err(|e| BbcprError::Io(e))?;
+            
+            // Make script executable
+            let mut perms = file.metadata().map_err(|e| BbcprError::Io(e))?.permissions();
+            perms.set_mode(0o755);
+            file.set_permissions(perms).map_err(|e| BbcprError::Io(e))?;
+            
+            std::env::set_var("SSH_ASKPASS", askpass_script.to_string_lossy().to_string());
         }
         
         let session = builder

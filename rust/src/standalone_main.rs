@@ -16,6 +16,8 @@ pub struct Args {
     pub preserve: bool,
     pub resume: bool,
     pub list_transfers: bool,
+    pub password: bool,
+    pub password_value: Option<String>,
     pub version: bool,
     pub license: bool,
     pub help: bool,
@@ -35,6 +37,8 @@ impl Args {
             preserve: false,
             resume: false,
             list_transfers: false,
+            password: false,
+            password_value: None,
             version: false,
             license: false,
             help: false,
@@ -51,6 +55,13 @@ impl Args {
                 "-p" => result.preserve = true,
                 "-R" | "--resume" => result.resume = true,
                 "--list-transfers" => result.list_transfers = true,
+                "--password" => result.password = true,
+                "--ssh-pass" => {
+                    if i + 1 < args.len() {
+                        result.password_value = Some(args[i + 1].clone());
+                        i += 1;
+                    }
+                }
                 "-s" => {
                     if i + 1 < args.len() {
                         result.streams = args[i + 1].parse().unwrap_or(4);
@@ -126,6 +137,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("    -e               Enable checksum verification");
         println!("    -p               Preserve file attributes");
         println!("    -R, --resume     Resume interrupted transfers automatically");
+        println!("    --password       Prompt for SSH password authentication");
+        println!("    --ssh-pass <PWD> SSH password (not recommended, use --password)");
         println!("    -h, --help       Print help information");
         println!("    --version, -#    Print version information");
         println!("    --license        Print license information");
@@ -137,6 +150,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("    bbcpr file.txt user@host:/path/");
         println!("    bbcpr -s 8 -e largefile.zip user@host:/backup/");
         println!("    bbcpr -R -s 16 huge-file.iso user@host:/storage/");
+        println!("    bbcpr --password file.txt user@host:/backup/  # SSH password auth");
         println!("    bbcpr --list-transfers");
         return Ok(());
     }
@@ -178,6 +192,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     if args.resume {
         println!("  Resume mode: enabled");
+    }
+
+    if args.password || args.password_value.is_some() {
+        println!("  SSH password authentication: enabled");
     }
 
     println!();

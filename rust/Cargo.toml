@@ -52,6 +52,9 @@ flate2 = "1.0"
 bincode = "1.3"
 bytes = "1.7"
 
+# Authentication
+rpassword = { version = "7.3", optional = true }
+
 # Platform specific
 socket2 = "0.5"
 
@@ -82,3 +85,6 @@ opt-level = 0
 
 [profile.test]
 opt-level = 2
+
+[features]
+default = ["rpassword"]

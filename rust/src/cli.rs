@@ -71,6 +71,14 @@ pub struct Args {
     #[arg(short = 'i', long = "identity", value_name = "FILE")]
     pub identity_file: Option<PathBuf>,
 
+    /// Prompt for SSH password authentication
+    #[arg(long = "password")]
+    pub ssh_password: bool,
+
+    /// SSH password (use --password for interactive prompt)
+    #[arg(long = "ssh-pass", value_name = "PASSWORD", hide = true)]
+    pub ssh_password_value: Option<String>,
+
     /// File containing list of files to copy
     #[arg(short = 'I', long = "file-list", value_name = "FILE")]
     pub file_list: Option<PathBuf>,
